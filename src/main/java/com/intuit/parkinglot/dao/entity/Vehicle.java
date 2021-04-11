@@ -2,56 +2,64 @@ package com.intuit.parkinglot.dao.entity;
 
 import com.intuit.parkinglot.dao.enums.VehicleType;
 
-public abstract class Vehicle {
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
+public abstract class Vehicle implements Serializable {
 
-    private String registrationNumber;
-    private String colour;
-    private ParkingTicket parkingTicket;
-    private VehicleType vehicleType;
+    protected String registrationNumber;
+    protected String colour;
+    protected VehicleType vehicleType;
+    protected Integer spotsNeeded;
+    protected List<ParkingSpot> parkingSpots;
 
     public Vehicle() {
-
+        parkingSpots = new LinkedList<ParkingSpot>();
     }
 
-    public Vehicle(String registrationNumber, String colour, VehicleType vehicleType) {
+    public Vehicle(String registrationNumber, String colour) {
         this.registrationNumber = registrationNumber;
         this.colour = colour;
-        this.parkingTicket = new ParkingTicket();
-        this.setVehicleType(vehicleType);
     }
 
     public String getRegistrationNumber() {
         return registrationNumber;
     }
 
-//    public void setRegistrationNumber(String registrationNumber) {
-//        this.registrationNumber = registrationNumber;
-//    }
-
     public String getColour() {
         return colour;
-    }
-
-//    public void setColour(String colour) {
-//        this.colour = colour;
-//    }
-
-    public ParkingTicket getParkingTicket() {
-        return parkingTicket;
-    }
-
-    public void setParkingTicket(ParkingTicket parkingTicket) {
-        this.parkingTicket = parkingTicket;
     }
 
     public VehicleType getVehicleType() {
         return vehicleType;
     }
 
-    public void setVehicleType(VehicleType vehicleType) {
-        this.vehicleType = vehicleType;
+    public Integer getSpotsNeeded() {
+        return spotsNeeded;
     }
+
+    public void setSpotsNeeded(Integer spotsNeeded) {
+        this.spotsNeeded = spotsNeeded;
+    }
+
+    public List<ParkingSpot> getParkingSpots() {
+        return parkingSpots;
+    }
+
+    public void parkInSpot(ParkingSpot spot){
+        parkingSpots.add(spot);
+    }
+
+    public void clearSpots(){
+        for (int i = 0; i < parkingSpots.size(); i++){
+            parkingSpots.get(i).removeVehicle();
+        }
+        parkingSpots.clear();
+    }
+
+    public abstract boolean canFitInSpot(ParkingSpot spot);
 
     @Override public boolean equals(Object obj) {
 
