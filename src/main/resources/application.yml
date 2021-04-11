@@ -1,0 +1,15 @@
+server:
+  port: 9090
+  servlet.context-path: /parkinglot
+
+
+logging.baseDir: /tmp/apps/parkinglot/logs/
+logging:
+  levels:
+    org.springframework: INFO
+    com.intuit.parkinglot: INFO
+  appenders:
+    name: rollingfile
+    rollingfile:
+      directory: ${logging.baseDir}
+      prefix: parkinglot-apis
