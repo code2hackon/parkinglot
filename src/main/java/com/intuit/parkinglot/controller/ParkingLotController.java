@@ -31,36 +31,52 @@ public class ParkingLotController {
     private ParkingLotService parkingLotService;
 
     @GetMapping(value = "/create")
-    public ResponseEntity<String> createParkingLot(@RequestParam("slot") Integer slot, @RequestParam("level") Integer level) throws Exception{
+    public ResponseEntity<String> createParkingLot(@RequestParam("slot") Integer slot, @RequestParam("level") Integer level, @RequestParam("row") Integer row) throws Exception{
         if(slot == null || level == null)
             throw new ValidationException("Slot or level is null.");
-        parkingLotService.createParkingLot(slot,level);
+        parkingLotService.createParkingLot(slot,level, row);
         return new ResponseEntity<String>("Parking Lot Created", HttpStatus.CREATED);
     }
 
     @PostMapping(value = "/park")
-    public ResponseEntity<String> parkVehicle(@RequestBody @Valid VehicleParkRequest vehicle, BindingResult bindingResult) throws BindException {
+    public ResponseEntity<BaseResponse> parkVehicle(@RequestBody @Valid VehicleParkRequest vehicle, BindingResult bindingResult) throws BindException {
         if (bindingResult.hasErrors()) {
             throw new BindException(bindingResult);
         }
-        parkingLotService.parkVehicle(vehicle);
         log.info("Called API parkVehicle {} {}", vehicle.getRegistrationNumber(), vehicle.getVehicleType());
-        return new ResponseEntity<String>("Vehicle parked", HttpStatus.OK);
+
+        Boolean isParked = parkingLotService.parkVehicle(vehicle);
+        BaseResponse baseResponse = new BaseResponse();
+        if(isParked){
+            baseResponse.setStatusCode(Constants.SUCCESS);
+            baseResponse.setMessageDescription(Constants.VEHICLE_PARK_SUCCESS);
+        }else{
+            baseResponse.setStatusCode(Constants.FAILURE);
+            baseResponse.setMessageDescription(Constants.VEHICLE_PARK_FAILURE);
+        }
+        return new ResponseEntity<BaseResponse>(baseResponse, HttpStatus.OK);
     }
 
     @PostMapping(value = "/leave")
-    public ResponseEntity<String> leaveVehicle(@RequestParam("regd") String registrationNumber)  {
+    public ResponseEntity<BaseResponse> leaveVehicle(@RequestParam("regdNo") String registrationNumber)  {
         if(registrationNumber == null)
-            throw new ValidationException("Slot or level is null.");
+            throw new ValidationException("RegistrationNumber is null or empty.");
+        BaseResponse baseResponse = new BaseResponse();
         Boolean result = parkingLotService.leaveVehicle(registrationNumber);
-        log.info("Called API parkVehicle");
-        return new ResponseEntity<String>("Vehicle unparked", HttpStatus.OK);
+        if(result){
+            baseResponse.setStatusCode(Constants.SUCCESS);
+            baseResponse.setMessageDescription(Constants.SUCCESS_MESSAGE);
+        }else{
+            baseResponse.setStatusCode(Constants.FAILURE);
+            baseResponse.setMessageDescription(Constants.VEHICLE_NOT_FOUND);
+        }
+        return new ResponseEntity<BaseResponse>(baseResponse, HttpStatus.OK);
     }
 
     @GetMapping(value = "/details")
     public ResponseEntity<BaseResponse> getVehicleDetailsByRegistrationNumber(@RequestParam("regdNo") String registrationNumber) throws Exception{
         if(registrationNumber == null)
-            throw new ValidationException("RegistrationNumber is null.");
+            throw new ValidationException("RegistrationNumber is null or empty.");
         Vehicle vehicle = parkingLotService.getVehicleDetailsByRegistrationNumber(registrationNumber);
         if(vehicle == null){
             BaseResponse baseResponse = new BaseResponse();

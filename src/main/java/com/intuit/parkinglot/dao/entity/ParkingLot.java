@@ -5,11 +5,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 public class ParkingLot implements Serializable {
@@ -23,12 +23,12 @@ public class ParkingLot implements Serializable {
 
     private static Logger log = LoggerFactory.getLogger(ParkingLot.class);
 
-    private ParkingLot(int numberOfSpots, int numberOfLevels){
+    private ParkingLot(int numberOfSpots, int numberOfLevels, int rows){
         NUM_LEVELS = numberOfLevels;
         levels = new ParkingLevel[NUM_LEVELS];
         mapOfRegdNoVsVehicle = new ConcurrentHashMap<String, Vehicle>();
         for (int floor = 0; floor < NUM_LEVELS; floor++){
-            levels[floor] = new ParkingLevel(floor, numberOfSpots);
+            levels[floor] = new ParkingLevel(floor, numberOfSpots, rows);
         }
         spotTypeOrderedLinkedList = new LinkedList<SpotType>();
         spotTypeOrderedLinkedList.add(SpotType.MOTORCYCLE);
@@ -37,11 +37,11 @@ public class ParkingLot implements Serializable {
     }
 
 
-    public static synchronized ParkingLot getInstance(int numberOfParkingSlots, int numberOfLevels) {
+    public static synchronized ParkingLot getInstance(int numberOfParkingSlots, int numberOfLevels, int rows) {
         if(parkingLot == null) {
             synchronized (ParkingLot.class){
                 if(parkingLot == null) {
-                    parkingLot = new ParkingLot(numberOfParkingSlots, numberOfLevels);
+                    parkingLot = new ParkingLot(numberOfParkingSlots, numberOfLevels, rows);
                     createdInstance = true;
                 }
             }
@@ -66,7 +66,7 @@ public class ParkingLot implements Serializable {
                 }
             }
         }
-        log.info("Vehicle with registration number {} parking failed",vehicle.getRegistrationNumber());
+        log.info("Vehicle with registration number {} parking failed. No empty slot available",vehicle.getRegistrationNumber());
         return false;
     }
 

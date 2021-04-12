@@ -21,12 +21,12 @@ public class ParkingLotService implements  IParkingService{
     private static Logger log = LoggerFactory.getLogger(ParkingLotService.class);
 
     @Override
-    public void createParkingLot(Integer numberOfParkingSlots, Integer numberOfLevels) throws ParkingLotException {
+    public void createParkingLot(int numberOfParkingSlots, int numberOfLevels, int rows) throws ParkingLotException {
 
         if(ParkingLot.isCreatedInstance())
             throw new ParkingLotException(Constants.PARKING_LOT_ALREADY_CREATED);
 
-        parkingLot = ParkingLot.getInstance(numberOfParkingSlots, numberOfLevels);
+        parkingLot = ParkingLot.getInstance(numberOfParkingSlots, numberOfLevels, rows);
         System.out.println("Created parking lot with " + numberOfParkingSlots + " slots");
     }
 
@@ -34,7 +34,7 @@ public class ParkingLotService implements  IParkingService{
     public boolean parkVehicle(VehicleParkRequest vehicleParkRequest) throws ParkingLotException {
         if(parkingLot == null) {
             log.error("Parking lot not created");
-            return false;
+            throw new ParkingLotException(Constants.PARKING_LOT_NOT_CREATED);
         }
 
         Vehicle vehicle;
@@ -67,7 +67,7 @@ public class ParkingLotService implements  IParkingService{
     public boolean leaveVehicle(String  registrationNumber) throws ParkingLotException {
         if(parkingLot == null) {
             log.error("Parking lot not created");
-            return false;
+            throw new ParkingLotException(Constants.PARKING_LOT_NOT_CREATED);
         }
         return parkingLot.leaveVehicle(registrationNumber);
     }
@@ -76,24 +76,9 @@ public class ParkingLotService implements  IParkingService{
     public Vehicle getVehicleDetailsByRegistrationNumber(String  registrationNumber) {
         if(parkingLot == null) {
             log.error("Parking lot not created");
-            return null;
+            throw new ParkingLotException(Constants.PARKING_LOT_NOT_CREATED);
         }
         return parkingLot.getVehicleDetailsByRegdNumber(registrationNumber);
-    }
-
-    @Override
-    public List<Integer> getSpotNumbersByRegistrationNo(String registrationNo) {
-        if(parkingLot == null) {
-            log.error("Parking lot not created");
-            return null;
-        }
-        List<Integer> spots = null;
-        Vehicle vehicle =  parkingLot.getVehicleDetailsByRegdNumber(registrationNo);
-        if(vehicle != null){
-            spots = vehicle.getParkingSpots().stream().map(item -> item.getSpotNumber()).collect(Collectors.toList());
-            log.info("Vehicle with registration number {} parked in spots: {}",vehicle.getRegistrationNumber(),spots);
-        }
-        return spots;
     }
 
 }

@@ -20,16 +20,16 @@ public class ParkingLevel implements Serializable {
     private Map<SpotType, SpotIndex> spotIndexMap;
     private static Logger log = LoggerFactory.getLogger(ParkingLevel.class);
 
-    public ParkingLevel(int floor, int numberOfSpots){
+    public ParkingLevel(int floor, int numberOfSpots, int rows){
         this.floor = floor;
         this.availableSpots = numberOfSpots;
         this.spots = new ParkingSpot[numberOfSpots];
         this.spotCountMap = new ConcurrentHashMap<SpotType,Integer>();
         this.spotIndexMap = new ConcurrentHashMap<SpotType,SpotIndex>();
-        initializeSpots(numberOfSpots);
+        initializeSpots(numberOfSpots, rows);
     }
 
-    private void initializeSpots(int numberOfSpots){
+    private void initializeSpots(int numberOfSpots, int rows){
 
         int largeSpots = (int) (numberOfSpots * Constants.PERCENTAGE_OF_LARGE_SPOTS);
         int compactSpots = (int) (numberOfSpots * Constants.PERCENTAGE_OF_COMPACT_SPOTS);
@@ -44,7 +44,7 @@ public class ParkingLevel implements Serializable {
             else if (spotNumber < (largeSpots + compactSpots)){
                 spotType = SpotType.COMPACT;
             }
-            int row = spotNumber / Constants.SPOT_PER_ROW;
+            int row = spotNumber / rows;
             spots[spotNumber] = new ParkingSpot(this, row, spotNumber, spotType);
         }
 

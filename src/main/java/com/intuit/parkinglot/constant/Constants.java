@@ -11,7 +11,11 @@ public interface Constants {
 
     public static final String	CREATE_PARKING_LOT					= "create_parking_lot";
     public static final String PARKING_LOT_ALREADY_CREATED          = "parking_lot_already_created";
+    public static final String PARKING_LOT_NOT_CREATED              = "parking_lot_not_created";
     public static final String VEHICLE_NOT_FOUND                    = "vehicle_not_found";
+    public static final String VEHICLE_PARK_SUCCESS                 = "vehicle_park_success";
+    public static final String VEHICLE_PARK_FAILURE                 = "vehicle_park_failure";
+
 
     public static final int SPOT_PER_ROW = 10;
     public static final double PERCENTAGE_OF_LARGE_SPOTS = 0.70;
