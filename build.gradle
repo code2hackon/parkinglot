@@ -15,6 +15,8 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	// https://mvnrepository.com/artifact/javax.validation/validation-api
+	implementation group: 'javax.validation', name: 'validation-api', version: '2.0.1.Final'
 	compile group: 'net.logstash.logback', name: 'logstash-logback-encoder', version: '4.11'
 	compile("org.codehaus.janino:janino")
 	providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'

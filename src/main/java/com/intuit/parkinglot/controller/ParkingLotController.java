@@ -1,16 +1,27 @@
 package com.intuit.parkinglot.controller;
 
 
+import com.intuit.parkinglot.constant.Constants;
+import com.intuit.parkinglot.dao.entity.Vehicle;
+import com.intuit.parkinglot.dto.BaseResponse;
+import com.intuit.parkinglot.dto.VehicleParkRequest;
+import com.intuit.parkinglot.dto.VehicleParkResponse;
+import com.intuit.parkinglot.exception.ValidationException;
 import com.intuit.parkinglot.service.ParkingLotService;
+import com.intuit.parkinglot.utilities.Utility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindException;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
 
 @RestController
-@RequestMapping("/v1/api/vehicle")
+@RequestMapping("/v1/api")
 public class ParkingLotController {
 
 
@@ -20,10 +31,45 @@ public class ParkingLotController {
     private ParkingLotService parkingLotService;
 
     @GetMapping(value = "/create")
-    public String parkVehicle(){
-        parkingLotService.createParkingLot(50,3);
+    public ResponseEntity<String> createParkingLot(@RequestParam("slot") Integer slot, @RequestParam("level") Integer level) throws Exception{
+        if(slot == null || level == null)
+            throw new ValidationException("Slot or level is null.");
+        parkingLotService.createParkingLot(slot,level);
+        return new ResponseEntity<String>("Parking Lot Created", HttpStatus.CREATED);
+    }
+
+    @PostMapping(value = "/park")
+    public ResponseEntity<String> parkVehicle(@RequestBody @Valid VehicleParkRequest vehicle, BindingResult bindingResult) throws BindException {
+        if (bindingResult.hasErrors()) {
+            throw new BindException(bindingResult);
+        }
+        parkingLotService.parkVehicle(vehicle);
+        log.info("Called API parkVehicle {} {}", vehicle.getRegistrationNumber(), vehicle.getVehicleType());
+        return new ResponseEntity<String>("Vehicle parked", HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/leave")
+    public ResponseEntity<String> leaveVehicle(@RequestParam("regd") String registrationNumber)  {
+        if(registrationNumber == null)
+            throw new ValidationException("Slot or level is null.");
+        Boolean result = parkingLotService.leaveVehicle(registrationNumber);
         log.info("Called API parkVehicle");
-        return "Parked success";
+        return new ResponseEntity<String>("Vehicle unparked", HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/details")
+    public ResponseEntity<BaseResponse> getVehicleDetailsByRegistrationNumber(@RequestParam("regdNo") String registrationNumber) throws Exception{
+        if(registrationNumber == null)
+            throw new ValidationException("RegistrationNumber is null.");
+        Vehicle vehicle = parkingLotService.getVehicleDetailsByRegistrationNumber(registrationNumber);
+        if(vehicle == null){
+            BaseResponse baseResponse = new BaseResponse();
+            baseResponse.setStatusCode(Constants.FAILURE);
+            baseResponse.setMessageDescription(Constants.FAILURE_MESSAGE);
+            return new ResponseEntity<BaseResponse>(baseResponse, HttpStatus.OK);
+        }
+        VehicleParkResponse response = Utility.convertToVehicleParkResponse(vehicle);
+        return new ResponseEntity<BaseResponse>(response, HttpStatus.OK);
     }
 
 }

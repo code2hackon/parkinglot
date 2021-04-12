@@ -8,7 +8,8 @@ import java.io.Serializable;
 
 public class MotorCycle extends Vehicle implements Serializable {
 
-    public MotorCycle(){
+    public MotorCycle(String registrationNumber){
+    	super(registrationNumber);
         spotsNeeded = Constants.SPOT_SIZE_FOR_MOTORCYCLE;
         vehicleType = VehicleType.MOTORCYCLE;
     }

@@ -1,6 +1,8 @@
 package com.intuit.parkinglot.dao.entity;
 
 import com.intuit.parkinglot.dao.enums.SpotType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ParkingSpot {
 
@@ -10,11 +12,14 @@ public class ParkingSpot {
     private Integer spotNumber;
     private ParkingLevel level;
 
+    private static Logger log = LoggerFactory.getLogger(ParkingSpot.class);
+
     public ParkingSpot(ParkingLevel level, int row, int spotNumber, SpotType spotType){
         this.level = level;
         this.row = row;
         this.spotNumber = spotNumber;
         this.spotType = spotType;
+        log.debug("Parking spot created { spotnumber:{} level:{} row:{} spotType:{}} ",getSpotNumber(),getLevel().getFloor(),getRow(),getSpotType());
     }
 
     public boolean isAvailable(){
@@ -55,7 +60,7 @@ public class ParkingSpot {
     }
 
     public void removeVehicle() {
-        level.notifySpotFreed();
+        level.notifySpotFreed(spotType);
         vehicle = null;
     }
 }

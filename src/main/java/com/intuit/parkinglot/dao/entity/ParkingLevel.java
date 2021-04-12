@@ -2,23 +2,30 @@ package com.intuit.parkinglot.dao.entity;
 
 import com.intuit.parkinglot.constant.Constants;
 import com.intuit.parkinglot.dao.enums.SpotType;
+import com.sun.corba.se.impl.interceptors.SlotTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ParkingLevel implements Serializable {
 
     private Integer floor;
     private ParkingSpot[] spots;
     private int availableSpots;
-
+    private Map<SpotType,Integer> spotCountMap;
+    private Map<SpotType, SpotIndex> spotIndexMap;
     private static Logger log = LoggerFactory.getLogger(ParkingLevel.class);
 
     public ParkingLevel(int floor, int numberOfSpots){
         this.floor = floor;
         this.availableSpots = numberOfSpots;
         this.spots = new ParkingSpot[numberOfSpots];
+        this.spotCountMap = new ConcurrentHashMap<SpotType,Integer>();
+        this.spotIndexMap = new ConcurrentHashMap<SpotType,SpotIndex>();
         initializeSpots(numberOfSpots);
     }
 
@@ -27,6 +34,7 @@ public class ParkingLevel implements Serializable {
         int largeSpots = (int) (numberOfSpots * Constants.PERCENTAGE_OF_LARGE_SPOTS);
         int compactSpots = (int) (numberOfSpots * Constants.PERCENTAGE_OF_COMPACT_SPOTS);
         int motorcycleSpots = numberOfSpots - largeSpots - compactSpots;
+        updateSpotCountMap(largeSpots,compactSpots,motorcycleSpots);
 
         for (int spotNumber = 0; spotNumber < numberOfSpots; spotNumber++){
             SpotType spotType = SpotType.MOTORCYCLE;
@@ -40,31 +48,43 @@ public class ParkingLevel implements Serializable {
             spots[spotNumber] = new ParkingSpot(this, row, spotNumber, spotType);
         }
 
-        log.info("Spots created in level {} motorcycle:{} compact:{} large:{} ", floor,motorcycleSpots,compactSpots,largeSpots);
+        spotIndexMap.put(SpotType.LARGE , new SpotIndex(0, largeSpots-1));
+        spotIndexMap.put(SpotType.COMPACT, new SpotIndex(largeSpots,largeSpots+compactSpots-1));
+        spotIndexMap.put(SpotType.MOTORCYCLE, new SpotIndex(largeSpots+compactSpots,numberOfSpots-1));
+        log.info("Bus spots : [{}-{}] , Car spots : [{}-{}] , Motorcycle Spots : [{}-{}]",
+                0,largeSpots-1,largeSpots,(largeSpots+compactSpots-1),largeSpots+compactSpots,numberOfSpots-1);
+        log.info("Spots created in level {} large:{} compact:{} motorcycle:{} ", floor,largeSpots,compactSpots,motorcycleSpots);
     }
+
+    private void updateSpotCountMap(int largeSpots, int compactSpots, int motorcycleSpots) {
+        spotCountMap.put(SpotType.LARGE,largeSpots);
+        spotCountMap.put(SpotType.COMPACT,compactSpots);
+        spotCountMap.put(SpotType.MOTORCYCLE,motorcycleSpots);
+    }
+
 
     public int getAvailableSpots(){
         return availableSpots;
     }
 
 
-    public boolean parkVehicle(Vehicle vehicle){
-        if (getAvailableSpots() < vehicle.getSpotsNeeded())
+    public boolean parkVehicle(Vehicle vehicle, SpotType spotType){
+        if (getAvailableSpots() < vehicle.getSpotsNeeded() || spotCountMap.get(spotType) == 0)
             return false;
 
-        int spotNumber = findAvailableSpots(vehicle);
+        int spotNumber = findAvailableSpots(vehicle, spotType);
         if (spotNumber < 0)
             return false;
         return parkStartingAtSpot(spotNumber, vehicle);
     }
 
 
-    private int findAvailableSpots(Vehicle vehicle){
+    private int findAvailableSpots(Vehicle vehicle, SpotType spotType){
         int numberOfSpotsNeeded = vehicle.getSpotsNeeded();
         int lastRow = -1;
         int matchingSpotsCount = 0;
-
-        for (int i = 0; i < spots.length; i++){
+        SpotIndex spotIndex = spotIndexMap.get(spotType);
+        for (int i = spotIndex.getBegin(); i <= spotIndex.getEnd(); i++){
             ParkingSpot spot = spots[i];
             if (lastRow != spot.getRow()){
                 matchingSpotsCount = 0;
@@ -83,17 +103,24 @@ public class ParkingLevel implements Serializable {
         return -1;
     }
 
-    private boolean parkStartingAtSpot(int num, Vehicle vehicle){
+    private boolean parkStartingAtSpot(int spotIndex, Vehicle vehicle){
         vehicle.clearSpots();
         boolean success = true;
-        for (int i = num; i < num + vehicle.spotsNeeded; i++){
+        for (int i = spotIndex; i < spotIndex + vehicle.spotsNeeded; i++){
             success &= spots[i].park(vehicle);
+            SpotType spotType = spots[i].getSpotType();
+            spotCountMap.put(spotType,spotCountMap.get(spotType)+1);
         }
         availableSpots -= vehicle.spotsNeeded;
         return success;
     }
 
-    public void notifySpotFreed() {
+    public int getFloor(){
+        return this.floor;
+    }
+
+    public void notifySpotFreed(SpotType spotType) {
+        spotCountMap.put(spotType,spotCountMap.get(spotType)-1);
         availableSpots++;
     }
 }

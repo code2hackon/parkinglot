@@ -8,7 +8,8 @@ import java.io.Serializable;
 
 public class Car extends Vehicle implements Serializable {
 
-    public Car(){
+    public Car(String registrationNumber){
+    	super(registrationNumber);
         spotsNeeded = Constants.SPOT_SIZE_FOR_CAR;
         vehicleType = VehicleType.CAR;
     }

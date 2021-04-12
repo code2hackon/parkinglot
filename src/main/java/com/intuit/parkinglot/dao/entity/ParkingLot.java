@@ -1,9 +1,12 @@
 package com.intuit.parkinglot.dao.entity;
 
+import com.intuit.parkinglot.dao.enums.SpotType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.util.Enumeration;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,6 +19,7 @@ public class ParkingLot implements Serializable {
     private static volatile ParkingLot parkingLot = null;
     private static volatile boolean createdInstance = false;
     private Map<String,Vehicle> mapOfRegdNoVsVehicle;
+    private LinkedList<SpotType> spotTypeOrderedLinkedList;
 
     private static Logger log = LoggerFactory.getLogger(ParkingLot.class);
 
@@ -25,8 +29,11 @@ public class ParkingLot implements Serializable {
         mapOfRegdNoVsVehicle = new ConcurrentHashMap<String, Vehicle>();
         for (int floor = 0; floor < NUM_LEVELS; floor++){
             levels[floor] = new ParkingLevel(floor, numberOfSpots);
-
         }
+        spotTypeOrderedLinkedList = new LinkedList<SpotType>();
+        spotTypeOrderedLinkedList.add(SpotType.MOTORCYCLE);
+        spotTypeOrderedLinkedList.add(SpotType.COMPACT);
+        spotTypeOrderedLinkedList.add(SpotType.LARGE);
     }
 
 
@@ -47,14 +54,19 @@ public class ParkingLot implements Serializable {
     }
 
     public boolean parkVehicle(Vehicle vehicle){
-        for (int i = 0; i < levels.length; i++){
-            if (levels[i].parkVehicle(vehicle)) {
-                mapOfRegdNoVsVehicle.put(vehicle.getRegistrationNumber(), vehicle);
-                List<Integer> spots = vehicle.getParkingSpots().stream().map(item -> item.getSpotNumber()).collect(Collectors.toList());
-                log.info("Vehicle with registration number {} parked in spots: {}",vehicle.getRegistrationNumber(),spots);
-                return true;
+        for(SpotType spotType : spotTypeOrderedLinkedList) {
+            for (int i = 0; i < levels.length; i++) {
+                if (levels[i].parkVehicle(vehicle, spotType)) {
+                    mapOfRegdNoVsVehicle.put(vehicle.getRegistrationNumber(), vehicle);
+                    List<Integer> spots = vehicle.getParkingSpots().stream().map(item -> item.getSpotNumber()).collect(Collectors.toList());
+                    int row = vehicle.getParkingSpots().get(0).getRow();
+                    int level = vehicle.getParkingSpots().get(0).getLevel().getFloor();
+                    log.info("Vehicle with registration number {} parked in spots: {} row:{} level:{}", vehicle.getRegistrationNumber(), spots, row, level);
+                    return true;
+                }
             }
         }
+        log.info("Vehicle with registration number {} parking failed",vehicle.getRegistrationNumber());
         return false;
     }
 

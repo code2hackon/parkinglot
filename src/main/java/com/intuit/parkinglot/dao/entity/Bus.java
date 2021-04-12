@@ -8,7 +8,8 @@ import java.io.Serializable;
 
 public class Bus extends Vehicle implements Serializable {
 
-    public Bus(){
+    public Bus(String registrationNumber){
+    	super(registrationNumber);
         spotsNeeded = Constants.SPOT_SIZE_FOR_BUS;
         vehicleType = VehicleType.BUS;
     }
